@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>chooseMap</title>
+  <style>
+    .map{
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+    .china{
+      width: 50%;
+      height: 100vh;
+    }
+    .province{
+      width: 50%;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+<button id="back">返回主页面</button>
+<button id="withdraw">撤回（返回上一步）</button>
+<div class="china"></div>
+<div class="province"></div>
+
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="echarts.min.js"></script>
+<script>
+  const mapURL={
+    china:'./china.json',
+    chongqing:'./chongqing.json',
+    sichuan:'./sichuan.json',
+      mianyang:'./mianyang.json'
+  };
+  const withDrawList = [];
+  function record(content){
+    withDrawList.push(content);
+  }
+  async function run(){
+    //获取地图数据
+    const chinaMapRes = await axios.get(mapURL.china);
+    const chongqingMapRes = await axios.get(mapURL.chongqing);
+    const sichuanMapRes = await axios.get(mapURL.sichuan);
+    const mianyangMapRes = await axios.get(mapURL.mianyang);
+    //注册地图
+    echarts.registerMap('CHINA',chinaMapRes.data);
+    echarts.registerMap('重庆市',chongqingMapRes.data);
+    echarts.registerMap('四川省',sichuanMapRes.data);
+    echarts.registerMap('绵阳市',mianyangMapRes.data);
+
+      //获取容器
+    const container = document.querySelector('.china')
+    const goBackBtn = document.querySelector('#back')
+    const withDrawBtn = document.querySelector('#withdraw')
+    // const container4province = document.querySelector('.province')
+
+    const instance = echarts.init(container)
+    // const instance4province = echarts.init(container4province)
+
+    const chinaMapOpt ={
+      geo:{
+        show:true,
+        map:'CHINA',
+        selectedMode:'single'
+      }
+    };
+    // const provinceMapOpt = {
+    //   geo:{
+    //     show: true,
+    //     map: '重庆市',
+    //     selectedMode: 'single'
+    //   }
+    // };
+    instance.setOption(chinaMapOpt);
+    //deep
+
+    // instance4province.setOption(provinceMapOpt);
+    //下钻
+    instance.on('geoselectchanged',(e)=>{
+      //获取china的那个div
+      // const container4province = document.querySelector('.china')
+      //把省的这个内容给填到china的div当中去
+      // const instance4province = echarts.init(container4province)
+      record(chinaMapOpt.geo.map)
+      chinaMapOpt.geo.map = e.name;
+      instance.setOption(chinaMapOpt);
+    });
+    //上钻
+    goBackBtn.addEventListener('click',()=>{
+      if (chinaMapOpt.geo.map==='CHINA'){
+        alert('在最高级');
+        return;
+      }
+      record(chinaMapOpt.geo.map)
+      chinaMapOpt.geo.map = 'CHINA';
+      instance.setOption(chinaMapOpt)
+    });
+    withDrawBtn.addEventListener('click',()=>{
+      const lastIdx =withDrawList.length-1
+      const lastStep = withDrawList[lastIdx]
+      chinaMapOpt.geo.map=lastStep;
+      lastStep&&instance.setOption(chinaMapOpt)
+      //删除数组最后一项
+      withDrawList.splice(lastIdx,1)
+    })
+
+
+  }
+  run();
+</script>
+</body>
+</html>
